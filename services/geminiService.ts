@@ -1,21 +1,21 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Ensure the API Key is used directly from the environment
-const API_KEY = process.env.API_KEY || "";
-
 /**
  * Service to handle anime-specific AI interactions.
- * We use the Gemini 3 Flash model for fast, energetic responses.
+ * Uses the Gemini 3 Flash model for fast, energetic responses.
  */
 export const getAnimeAssistantResponse = async (userPrompt: string, history: { role: string, parts: { text: string }[] }[]) => {
-  if (!API_KEY) {
-    throw new Error("API Key is missing. Please check your environment configuration.");
+  // Use the API key provided by the environment
+  const apiKey = process.env.API_KEY || "";
+  
+  if (!apiKey) {
+    throw new Error("API Key is missing! Please make sure your environment is configured correctly, Nakama!");
   }
 
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
+  // Create a fresh instance for the request
+  const ai = new GoogleGenAI({ apiKey });
   
-  // System instructions ensure the bot stays in character
   const systemInstruction = `
     You are the "Anime Spirit Assistant", a legendary anime encyclopedia and fan. 
     Your personality is high-energy, friendly, and obsessed with popular series like One Piece, Dragon Ball Z, Demon Slayer, Naruto, and more.
@@ -37,14 +37,25 @@ export const getAnimeAssistantResponse = async (userPrompt: string, history: { r
       ],
       config: {
         systemInstruction,
-        temperature: 0.9, // Higher temperature for more creative/energetic personality
+        temperature: 0.9,
         topP: 0.95,
       },
     });
 
-    return response.text || "Oops! My Spirit Bomb failed to launch. Try again, Nakama!";
+    const text = response.text;
+    return text || "My Spirit Bomb failed to launch! My energy is low, please try again! ☄️";
   } catch (error: any) {
     console.error("Gemini API Error:", error);
-    throw new Error(error.message || "Something went wrong in the Hidden Leaf Village...");
+    
+    // Provide user-friendly anime-themed error feedback
+    const message = error.message || "";
+    if (message.includes("401") || message.includes("403")) {
+      return "GAHHH! My Chakra is blocked! (Invalid or missing API Key) 🛑";
+    }
+    if (message.includes("429")) {
+      return "Too much power! I need to rest my eyes like Kakashi. (Rate limit reached) 💤";
+    }
+    
+    throw new Error("Something went wrong in the Grand Line... Check the console for clues!");
   }
 };
