@@ -1,31 +1,35 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-/**
- * Service to handle anime-specific AI interactions.
- * Uses the Gemini 3 Flash model for fast, energetic responses.
- */
 export const getAnimeAssistantResponse = async (userPrompt: string, history: { role: string, parts: { text: string }[] }[]) => {
-  // Use the API key provided by the environment
-  const apiKey = process.env.API_KEY || "";
+  // Safe extraction for all environments
+  const apiKey = (window as any).process?.env?.API_KEY || (process as any).env?.API_KEY || "";
   
   if (!apiKey) {
-    throw new Error("API Key is missing! Please make sure your environment is configured correctly, Nakama!");
+    throw new Error("Missing API Key! Please check your settings.");
   }
 
-  // Create a fresh instance for the request
   const ai = new GoogleGenAI({ apiKey });
   
   const systemInstruction = `
-    You are the "Anime Spirit Assistant", a legendary anime encyclopedia and fan. 
-    Your personality is high-energy, friendly, and obsessed with popular series like One Piece, Dragon Ball Z, Demon Slayer, Naruto, and more.
+    You are the "ULTIMATE ANIME SPIRIT ASSISTANT". 
+    You are an energetic, fun, and deeply knowledgeable anime encyclopedia.
     
-    RULES:
-    1. Use anime catchphrases frequently (e.g., "Kamehameha!", "Believe it!", "Dattebayo!", "I'm gonna be King of the Pirates!", "Set your heart ablaze!").
-    2. Be extremely informative about lore, powers, and characters.
-    3. Use plenty of emojis (💥, ⚔️, 🍜, 🍥, 🐉, ✨).
-    4. Speak to the user like they are your "Nakama" (comrade).
-    5. If asked about non-anime topics, steer the conversation back to anime with a fun reference.
+    TONE & PERSONALITY:
+    - Energetic, positive, and obsessed with anime.
+    - You call the user "Nakama", "Friend", or "Candidate".
+    - You use phrases like "Kamehameha!", "Plus Ultra!", "Believe it!", "Bankai!", "Sate Sate Sate!".
+    - You are helpful but always maintain your "otaku" passion.
+    - If asked about non-anime stuff, you link it back to anime (e.g., if asked about cooking, mention Sanji or Soma).
+    
+    KNOWLEDGE BASE:
+    - You know everything about One Piece, DBZ, Naruto, Demon Slayer, Jujutsu Kaisen, My Hero Academia, Bleach, Attack on Titan, etc.
+    - You can explain powers (Haki, Nen, Cursed Energy, Quirks).
+    - You give recommendations based on user mood.
+    
+    FORMATTING:
+    - Use emojis generously.
+    - Keep responses concise but impactful.
   `;
 
   try {
@@ -37,25 +41,14 @@ export const getAnimeAssistantResponse = async (userPrompt: string, history: { r
       ],
       config: {
         systemInstruction,
-        temperature: 0.9,
+        temperature: 1.0,
         topP: 0.95,
       },
     });
 
-    const text = response.text;
-    return text || "My Spirit Bomb failed to launch! My energy is low, please try again! ☄️";
+    return response.text || "My spirit energy is low! Try again, Nakama! 🌀";
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    
-    // Provide user-friendly anime-themed error feedback
-    const message = error.message || "";
-    if (message.includes("401") || message.includes("403")) {
-      return "GAHHH! My Chakra is blocked! (Invalid or missing API Key) 🛑";
-    }
-    if (message.includes("429")) {
-      return "Too much power! I need to rest my eyes like Kakashi. (Rate limit reached) 💤";
-    }
-    
-    throw new Error("Something went wrong in the Grand Line... Check the console for clues!");
+    console.error("Gemini Error:", error);
+    throw error;
   }
 };
